@@ -65,7 +65,7 @@ export const login = async (req, res, next) => {
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
       expiresIn: '7d',
     });
-    console.log(process.env.NODE_ENV);
+    console.log(process.env.NODE_ENV === 'production');
     return res
       .cookie('token', token, {
         secure: process.env.NODE_ENV === 'production',
