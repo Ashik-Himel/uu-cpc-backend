@@ -19,23 +19,25 @@ export const register = async (req, res, next) => {
       section,
       email,
       password: await bcrypt.hash(password, 10),
-      role: 'user',
+      role: 'member',
     };
 
-    const user = await db.collection('users').insertOne(newUser);
-    const token = jwt.sign(user, jwtSecret, { expiresIn: '7d' });
+    const result = await db.collection('users').insertOne(newUser);
+    const token = jwt.sign(
+      { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
+      jwtSecret,
+      { expiresIn: '7d' },
+    );
 
     return res
       .cookie('token', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
       })
       .status(201)
       .json({
         ok: true,
         message: 'User registered successfully',
-        user: { _id: user._id, email: user.email, role: user.role },
+        user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
       });
   } catch (error) {
     return next(error);
@@ -57,46 +59,20 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ ok: false, message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(user, jwtSecret, { expiresIn: '7d' });
+    const { _id, name, studentId, batch, section, role } = user;
+    const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
+      expiresIn: '7d',
+    });
     return res
       .cookie('token', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
       })
       .json({
         ok: true,
         message: 'Logged in successfully',
-        user: { _id: user._id, email: user.email, role: user.role },
+        user: { _id, name, studentId, batch, section, email, role },
       });
   } catch (error) {
-    return next(error);
-  }
-};
-
-export const verifyLogin = async (req, res, next) => {
-  try {
-    const db = getDB();
-    const token = req.cookies?.token || req.query?.token;
-    if (!token) {
-      return res.status(401).json({ ok: false, message: 'Unauthorized access' });
-    }
-
-    const decoded = jwt.verify(token, jwtSecret);
-    const user = await db.collection('users').findOne({ _id: new ObjectId(decoded._id) });
-    if (!user) {
-      return res.clearCookie('token').status(404).json({ ok: false, message: 'User not found' });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      message: 'Logged in successfully',
-      user: { _id: user._id, email: user.email, role: user.role },
-    });
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.clearToken('token').status(401).json({ ok: false, message: 'Invalid token' });
-    }
     return next(error);
   }
 };
@@ -110,7 +86,9 @@ export const forgotPassword = async (req, res, next) => {
     }
     res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
 
-    const token = jwt.sign(user, jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ _id: user._id, email: user?.email }, jwtSecret, {
+      expiresIn: '1h',
+    });
     const resetLink = `${clientDomain}/reset-password?token=${token}`;
 
     await sendEmail({

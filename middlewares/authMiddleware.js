@@ -6,7 +6,7 @@ import { jwtSecret } from '../configs/variables.js';
 export const authorizeUser = async (req, res, next) => {
   try {
     const db = getDB();
-    const authHeader = req.headers.Authorization;
+    const authHeader = req.headers.authorization;
     const token = authHeader.split(' ')[1];
 
     if (!token) {
