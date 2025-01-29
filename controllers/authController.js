@@ -68,14 +68,13 @@ export const login = async (req, res, next) => {
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
       expiresIn: '7d',
     });
-    console.log(`client domain: ${clientDomain}`);
     return res
       .cookie('token', token, {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production' ? 'true' : 'false',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        domain: clientDomain,
+        domain: process.env.NODE_ENV === 'production' ? 'uucpc.vercel.app' : 'localhost',
         path: '/',
       })
       .json({
