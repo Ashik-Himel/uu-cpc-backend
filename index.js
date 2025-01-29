@@ -14,6 +14,10 @@ app.use(
   cors({
     origin: clientDomain,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    preflightContinue: false,
+    optionsSuccessStatus: 200,
   }),
 );
 app.use(express.json());
