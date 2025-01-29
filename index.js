@@ -2,7 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import { connectDB } from './configs/db.js';
-import { port } from './configs/variables.js';
+import { clientDomain, port } from './configs/variables.js';
 import errorHandler from './middlewares/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 // import contestRoutes from './routes/contestRoutes.js';
@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['https://uucpc.vercel.app', 'http://uucpc.vercel.app'],
+    origin: clientDomain,
     credentials: true,
   }),
 );

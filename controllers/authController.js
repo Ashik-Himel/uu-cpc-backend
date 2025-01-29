@@ -35,11 +35,9 @@ export const register = async (req, res, next) => {
     );
 
     res.cookie('token', token, {
-      secure: true,
-      sameSite: 'None',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: 'uucpc.vercel.app',
-      path: '/',
     });
     res.status(201).json({
       ok: true,
@@ -70,20 +68,17 @@ export const login = async (req, res, next) => {
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
       expiresIn: '7d',
     });
-    res
-      .cookie('token', token, {
-        secure: true,
-        sameSite: 'None',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        domain: 'uucpc.vercel.app',
-        path: '/',
-      })
-      .status(200)
-      .json({
-        ok: true,
-        message: 'Logged in successfully',
-        user: { _id, name, studentId, batch, section, email, role },
-      });
+
+    res.cookie('token', token, {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({
+      ok: true,
+      message: 'Logged in successfully',
+      user: { _id, name, studentId, batch, section, email, role },
+    });
   } catch (error) {
     return next(error);
   }
