@@ -68,6 +68,7 @@ export const login = async (req, res, next) => {
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
       expiresIn: '7d',
     });
+    console.log(`client domain: ${clientDomain}`);
     return res
       .cookie('token', token, {
         httpOnly: false,
