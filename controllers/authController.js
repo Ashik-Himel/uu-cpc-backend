@@ -34,18 +34,18 @@ export const register = async (req, res, next) => {
       { expiresIn: '7d' },
     );
 
-    return res
-      .cookie('token', token, {
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .status(201)
-      .json({
-        ok: true,
-        message: 'User registered successfully',
-        user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
-      });
+    res.cookie('token', token, {
+      secure: true,
+      sameSite: 'None',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: 'uucpc.vercel.app',
+      path: '/',
+    });
+    res.status(201).json({
+      ok: true,
+      message: 'User registered successfully',
+      user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
+    });
   } catch (error) {
     return next(error);
   }
