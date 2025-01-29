@@ -31,9 +31,12 @@ export const register = async (req, res, next) => {
 
     return res
       .cookie('token', token, {
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production' ? 'true' : 'false',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        domain: clientDomain,
+        path: '/',
       })
       .status(201)
       .json({
@@ -67,9 +70,12 @@ export const login = async (req, res, next) => {
     });
     return res
       .cookie('token', token, {
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production' ? 'true' : 'false',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        domain: clientDomain,
+        path: '/',
       })
       .json({
         ok: true,
