@@ -22,6 +22,11 @@ export const register = async (req, res, next) => {
       role: 'member',
     };
 
+    const existingUser = await db.collection('users').findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ ok: false, message: 'User already exists' });
+    }
+
     const result = await db.collection('users').insertOne(newUser);
     const token = jwt.sign(
       { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
@@ -73,6 +78,7 @@ export const login = async (req, res, next) => {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         domain: process.env.NODE_ENV === 'production' ? 'uucpc.vercel.app' : 'localhost',
       })
+      .status(200)
       .json({
         ok: true,
         message: 'Logged in successfully',
