@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { getDB } from '../configs/db.js';
 import sendEmail from '../configs/email.js';
+import redisClient from '../configs/redisClient.js';
 import { clientDomain, jwtSecret } from '../configs/variables.js';
 
 export const register = async (req, res, next) => {
@@ -31,7 +32,7 @@ export const register = async (req, res, next) => {
       { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
       jwtSecret,
       {
-        expiresIn: 7 * 24 * 60 * 60 * 1000,
+        expiresIn: '7d',
       },
     );
 
@@ -63,7 +64,7 @@ export const login = async (req, res, next) => {
 
     const { _id, name, studentId, batch, section, role } = user;
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
-      expiresIn: 7 * 24 * 60 * 60 * 1000,
+      expiresIn: '7d',
     });
 
     return res.status(200).json({
@@ -87,7 +88,7 @@ export const forgotPassword = async (req, res, next) => {
     res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
 
     const token = jwt.sign({ _id: user._id, email: user?.email }, jwtSecret, {
-      expiresIn: 60 * 60 * 1000,
+      expiresIn: '1h',
     });
     const resetLink = `${clientDomain}/reset-password?token=${token}`;
 
@@ -95,8 +96,8 @@ export const forgotPassword = async (req, res, next) => {
       to: user.email,
       subject: 'Reset Password - UU CPC',
       html: `
-        <h3>You requested a password reset</h3>
-        <p>Click the link below to reset your password</p>
+        <h3>You requested to reset your UU CPC account's password</h3>
+        <p>Click the link below to reset the password</p>
         <a href="${resetLink}">Reset Password</a>
         <p>This link is valid for one hour.</p>
       `,
@@ -119,16 +120,24 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ ok: false, message: 'Passwords do not match' });
     }
 
+    const isTokenUsed = await redisClient.get(`used_token:${token}`);
+    if (isTokenUsed) {
+      return res.status(400).json({ ok: false, message: 'Token has already been used' });
+    }
+
     const decoded = jwt.verify(token, jwtSecret);
     const user = await db.collection('users').findOne({ _id: new ObjectId(decoded?._id) });
+
     if (!user) {
-      return res.status(404).json({ ok: false, message: 'Invalid token or user not found' });
+      return res.status(404).json({ ok: false, message: 'User not found' });
     }
 
     const hash = await bcrypt.hash(newPassword, 10);
     await db
       .collection('users')
       .updateOne({ _id: new ObjectId(decoded?._id) }, { $set: { password: hash } });
+
+    await redisClient.set(`used_token:${token}`, 'true', 'EX', 3600);
 
     return res.status(200).json({ ok: true, message: 'Password updated successfully' });
   } catch (error) {
