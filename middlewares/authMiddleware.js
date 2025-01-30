@@ -17,14 +17,16 @@ export const authorizeUser = async (req, res, next) => {
     const user = await db.collection('users').findOne({ _id: new ObjectId(decoded?._id) });
 
     if (!user) {
-      return res.clearCookie('token').status(404).json({ ok: false, message: 'User not found' });
+      res.clearCookie('token');
+      return res.status(404).json({ ok: false, message: 'User not found' });
     }
 
     req.user = user;
     return next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.clearCookie('token').status(401).json({ ok: false, message: 'Invalid token' });
+      res.clearCookie('token');
+      return res.status(401).json({ ok: false, message: 'Invalid token' });
     }
     return next(error);
   }

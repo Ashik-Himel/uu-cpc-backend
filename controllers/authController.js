@@ -1,5 +1,4 @@
 /* eslint-disable object-curly-newline */
-/* eslint-disable consistent-return */
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
@@ -31,18 +30,14 @@ export const register = async (req, res, next) => {
     const token = jwt.sign(
       { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
       jwtSecret,
-      { expiresIn: '7d' },
+      { expiresIn: 7 * 24 * 60 * 60 * 1000 },
     );
 
-    res.cookie('token', token, {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       message: 'User registered successfully',
       user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
+      token,
     });
   } catch (error) {
     return next(error);
@@ -66,18 +61,14 @@ export const login = async (req, res, next) => {
 
     const { _id, name, studentId, batch, section, role } = user;
     const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
-      expiresIn: '7d',
+      expiresIn: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.cookie('token', token, {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       message: 'Logged in successfully',
       user: { _id, name, studentId, batch, section, email, role },
+      token,
     });
   } catch (error) {
     return next(error);
@@ -94,11 +85,11 @@ export const forgotPassword = async (req, res, next) => {
     res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
 
     const token = jwt.sign({ _id: user._id, email: user?.email }, jwtSecret, {
-      expiresIn: '1h',
+      expiresIn: 60 * 60 * 1000,
     });
     const resetLink = `${clientDomain}/reset-password?token=${token}`;
 
-    await sendEmail({
+    return await sendEmail({
       to: user.email,
       subject: 'Reset Password - UU CPC',
       html: `
@@ -109,11 +100,11 @@ export const forgotPassword = async (req, res, next) => {
       `,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-export async function resetPassword(req, res, next) {
+export const resetPassword = async (req, res, next) => {
   try {
     const db = getDB();
     const { token } = req.query;
@@ -144,12 +135,13 @@ export async function resetPassword(req, res, next) {
     }
     return next(error);
   }
-}
+};
 
-export function logout(req, res, next) {
+export const logout = async (req, res, next) => {
   try {
-    res.clearCookie('token').status(200).json({ ok: true, message: 'Logged out successfully' });
+    res.clearCookie('token');
+    return res.status(200).json({ ok: true, message: 'Logged out successfully' });
   } catch (error) {
-    next(error);
+    return next(error);
   }
-}
+};
