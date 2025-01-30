@@ -27,17 +27,20 @@ export const register = async (req, res, next) => {
     }
 
     const result = await db.collection('users').insertOne(newUser);
-    const token = jwt.sign(
-      { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
-      jwtSecret,
-      { expiresIn: 7 * 24 * 60 * 60 * 1000 },
-    );
+    const token = jwt.sign({ _id: result.insertedId, email }, jwtSecret, {
+      expiresIn: 7 * 24 * 60 * 60 * 1000,
+    });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     return res.status(201).json({
       ok: true,
       message: 'User registered successfully',
       user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
-      token,
     });
   } catch (error) {
     return next(error);
@@ -60,16 +63,32 @@ export const login = async (req, res, next) => {
     }
 
     const { _id, name, studentId, batch, section, role } = user;
-    const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
+    const token = jwt.sign({ _id, email }, jwtSecret, {
       expiresIn: 7 * 24 * 60 * 60 * 1000,
     });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     return res.status(200).json({
       ok: true,
       message: 'Logged in successfully',
       user: { _id, name, studentId, batch, section, email, role },
-      token,
     });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const fetchUser = async (req, res, next) => {
+  try {
+    const { _id, name, studentId, batch, section, email, role } = req.user;
+    return res
+      .status(200)
+      .json({ ok: true, user: { _id, name, studentId, batch, section, email, role } });
   } catch (error) {
     return next(error);
   }

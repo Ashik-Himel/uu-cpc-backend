@@ -6,8 +6,8 @@ import { jwtSecret } from '../configs/variables.js';
 export const authorizeUser = async (req, res, next) => {
   try {
     const db = getDB();
-    const authHeader = req.headers.authorization;
-    const token = authHeader.split(' ')[1];
+    const token = req.cookies?.token || req.headers?.authorization?.split(' ')[1];
+    console.log('token', token);
 
     if (!token) {
       return res.status(401).json({ ok: false, message: 'Unauthorized access' });
