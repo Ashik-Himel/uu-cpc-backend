@@ -7,7 +7,8 @@ export const authorizeUser = async (req, res, next) => {
   try {
     const db = getDB();
     const token = req.cookies?.token || req.headers?.authorization?.split(' ')[1];
-    console.log('token', token);
+    console.log('req.cookies', req.cookies);
+    console.log('req.headers', req.headers);
 
     if (!token) {
       return res.status(401).json({ ok: false, message: 'Unauthorized access' });
