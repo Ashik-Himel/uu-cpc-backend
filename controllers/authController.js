@@ -28,18 +28,14 @@ export const register = async (req, res, next) => {
     };
 
     const result = await db.collection('users').insertOne(newUser);
-    const token = jwt.sign(
-      { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
-      jwtSecret,
-      {
-        expiresIn: '7d',
-      },
-    );
+    const token = jwt.sign({ _id: result.insertedId, email }, jwtSecret, {
+      expiresIn: '7d',
+    });
 
     return res.status(201).json({
       ok: true,
       message: 'User registered successfully',
-      user: { _id: result.insertedId, name, studentId, batch, section, email, role: 'member' },
+      userRole: 'member',
       token,
     });
   } catch (error) {
@@ -62,17 +58,35 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ ok: false, message: 'Invalid credentials' });
     }
 
-    const { _id, name, studentId, batch, section, role } = user;
-    const token = jwt.sign({ _id, name, studentId, batch, section, email, role }, jwtSecret, {
+    const { _id, role } = user;
+    const token = jwt.sign({ _id, email }, jwtSecret, {
       expiresIn: '7d',
     });
 
     return res.status(200).json({
       ok: true,
       message: 'Logged in successfully',
-      user: { _id, name, studentId, batch, section, email, role },
+      userRole: role,
       token,
     });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getUser = (req, res, next) => {
+  try {
+    const user = {
+      _id: req.user?._id,
+      name: req.user?.name,
+      studentId: req.user?.studentId,
+      batch: req.user?.batch,
+      section: req.user?.section,
+      email: req.user?.email,
+      role: req.user?.role,
+      avatar: req.user?.avatar,
+    };
+    return res.status(200).json({ ok: true, user });
   } catch (error) {
     return next(error);
   }
@@ -87,7 +101,7 @@ export const forgotPassword = async (req, res, next) => {
     }
     res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
 
-    const token = jwt.sign({ _id: user._id, email: user?.email }, jwtSecret, {
+    const token = jwt.sign({ _id: user?._id, email: user?.email }, jwtSecret, {
       expiresIn: '1h',
     });
     const resetLink = `${clientDomain}/reset-password?token=${token}`;
