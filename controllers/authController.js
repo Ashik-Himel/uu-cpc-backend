@@ -92,7 +92,6 @@ export const getUser = (req, res, next) => {
   }
 };
 
-// eslint-disable-next-line consistent-return
 export const forgotPassword = async (req, res, next) => {
   try {
     const db = getDB();
@@ -100,25 +99,24 @@ export const forgotPassword = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ ok: false, message: 'User not found' });
     }
-    res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
 
-    setImmediate(async () => {
-      const token = jwt.sign({ _id: user?._id, email: user?.email }, jwtSecret, {
-        expiresIn: '1h',
-      });
-      const resetLink = `${clientDomain}/reset-password?token=${token}`;
-
-      await sendEmail({
-        to: user.email,
-        subject: 'Reset Password - UU CPC',
-        html: `
-          <h3>You requested to reset your UU CPC account's password</h3>
-          <p>Click the link below to reset the password</p>
-          <a href="${resetLink}">Reset Password</a>
-          <p>This link is valid for one hour.</p>
-        `,
-      });
+    const token = jwt.sign({ _id: user?._id, email: user?.email }, jwtSecret, {
+      expiresIn: '1h',
     });
+    const resetLink = `${clientDomain}/reset-password?token=${token}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset Password - UU CPC',
+      html: `
+        <h3>You requested to reset your UU CPC account's password</h3>
+        <p>Click the link below to reset the password</p>
+        <a href="${resetLink}">Reset Password</a>
+        <p>This link is valid for one hour.</p>
+      `,
+    });
+
+    return res.status(200).json({ ok: true, message: 'Password reset link sent to your email' });
   } catch (error) {
     return next(error);
   }
