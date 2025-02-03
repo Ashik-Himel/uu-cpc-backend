@@ -6,6 +6,8 @@ import {
   login,
   register,
   resetPassword,
+  verifyProfile,
+  verifyProfileRequest,
 } from '../controllers/authController.js';
 import { authorizeUser } from '../middlewares/authMiddleware.js';
 
@@ -14,6 +16,8 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.get('/user', authorizeUser, getUser);
+router.get('/verify-profile', authorizeUser, verifyProfileRequest);
+router.put('/verify-profile', verifyProfile);
 router.post('/forgot-password', forgotPassword);
 router.put('/reset-password', resetPassword);
 

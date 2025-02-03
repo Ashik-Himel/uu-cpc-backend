@@ -29,16 +29,37 @@ export const authorizeUser = async (req, res, next) => {
   }
 };
 
-export const authorizeAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ ok: false, message: 'Admin access required' });
+export const authorizeVerifyUser = async (req, res, next) => {
+  try {
+    const isVerified = req.user?.verified;
+    if (!isVerified) {
+      return res.status(403).json({ ok: false, message: 'User not verified' });
+    }
+
+    return next();
+  } catch (error) {
+    return next(error);
   }
-  return next();
+};
+
+export const authorizeAdmin = (req, res, next) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ ok: false, message: 'Admin access required' });
+    }
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 };
 
 export const authorizeSuperAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'super-admin') {
-    return res.status(403).json({ ok: false, message: 'Super admin access required' });
+  try {
+    if (!req.user || req.user.role !== 'super-admin') {
+      return res.status(403).json({ ok: false, message: 'Super admin access required' });
+    }
+    return next();
+  } catch (error) {
+    return next(error);
   }
-  return next();
 };

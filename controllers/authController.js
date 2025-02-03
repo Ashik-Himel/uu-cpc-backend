@@ -25,6 +25,7 @@ export const register = async (req, res, next) => {
       email,
       password: await bcrypt.hash(password, 10),
       role: 'member',
+      verified: false,
     };
 
     const result = await db.collection('users').insertOne(newUser);
@@ -85,9 +86,68 @@ export const getUser = (req, res, next) => {
       email: req.user?.email,
       role: req.user?.role,
       avatar: req.user?.avatar,
+      verified: req.user?.verified,
     };
     return res.status(200).json({ ok: true, user });
   } catch (error) {
+    return next(error);
+  }
+};
+
+export const verifyProfileRequest = async (req, res, next) => {
+  try {
+    const token = jwt.sign({ _id: req.user?._id, email: req.user?.email }, jwtSecret, {
+      expiresIn: '1h',
+    });
+    const verifyLink = `${clientDomain}/verification-status?token=${token}`;
+
+    await sendEmail({
+      to: req?.user?.email,
+      subject: 'Profile Verification Request - UU CPC',
+      html: `
+        <h3>You have requested to verify your UU CPC account</h3>
+        <p>Click the link below to verify your account</p>
+        <a href="${verifyLink}">Verify Profile</a>
+        <p>This link is valid for one hour.</p>
+        <br />
+        <p>Best Regards,</p>
+        <p>UU CPC</p>
+      `,
+    });
+
+    return res
+      .status(200)
+      .json({ ok: true, message: 'Verification email sent to your email address' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const verifyProfile = async (req, res, next) => {
+  try {
+    const db = getDB();
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ ok: false, message: 'Your link is invalid' });
+    }
+
+    const decoded = jwt.verify(token, jwtSecret);
+    const user = await db.collection('users').findOne({ _id: new ObjectId(decoded?._id) });
+
+    if (user?.verified) {
+      return res.status(400).json({ ok: false, message: 'Profile already verified' });
+    }
+
+    await db
+      .collection('users')
+      .updateOne({ _id: new ObjectId(decoded?._id) }, { $set: { verified: true } });
+
+    return res.status(200).json({ ok: true, message: 'Profile verified successfully' });
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(400).json({ ok: false, message: 'Link expired or invalid' });
+    }
     return next(error);
   }
 };
@@ -113,6 +173,9 @@ export const forgotPassword = async (req, res, next) => {
         <p>Click the link below to reset the password</p>
         <a href="${resetLink}">Reset Password</a>
         <p>This link is valid for one hour.</p>
+        <br />
+        <p>Best Regards,</p>
+        <p>UU CPC</p>
       `,
     });
 
@@ -129,7 +192,7 @@ export const resetPassword = async (req, res, next) => {
     const { newPassword, reTypedPassword } = req.body;
 
     if (!token) {
-      return res.status(400).json({ ok: false, message: 'Token missing' });
+      return res.status(400).json({ ok: false, message: 'Your link is invalid' });
     }
     if (newPassword !== reTypedPassword) {
       return res.status(400).json({ ok: false, message: 'Passwords do not match' });
@@ -157,7 +220,7 @@ export const resetPassword = async (req, res, next) => {
     return res.status(200).json({ ok: true, message: 'Password updated successfully' });
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(400).json({ ok: false, message: 'Token expired or invalid' });
+      return res.status(400).json({ ok: false, message: 'Link expired or invalid' });
     }
     return next(error);
   }
