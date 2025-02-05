@@ -11,3 +11,6 @@ export const redisURL = process.env.REDIS_URL;
 export const adminEmail = process.env.ADMIN_EMAIL;
 export const nodemailerEmail = process.env.NODEMAILER_EMAIL;
 export const nodemailerPassword = process.env.NODEMAILER_PASSWORD;
+export const cloudinaryName = process.env.CLOUDINARY_NAME;
+export const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+export const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;

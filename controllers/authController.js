@@ -1,11 +1,24 @@
 /* eslint-disable object-curly-newline */
 import bcrypt from 'bcrypt';
+import cloudinary from 'cloudinary';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { getDB } from '../configs/db.js';
 import sendEmail from '../configs/email.js';
 import redisClient from '../configs/redisClient.js';
-import { clientDomain, jwtSecret } from '../configs/variables.js';
+import {
+  clientDomain,
+  cloudinaryApiKey,
+  cloudinaryApiSecret,
+  cloudinaryName,
+  jwtSecret,
+} from '../configs/variables.js';
+
+cloudinary.config({
+  cloud_name: cloudinaryName,
+  api_key: cloudinaryApiKey,
+  api_secret: cloudinaryApiSecret,
+});
 
 export const register = async (req, res, next) => {
   try {
@@ -198,6 +211,31 @@ export const updatePassword = async (req, res, next) => {
       .updateOne({ _id: new ObjectId(req.user?._id) }, { $set: { password: hashedPassword } });
 
     return res.status(200).json({ ok: true, message: 'Password updated successfully' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    const db = getDB();
+
+    cloudinary.v2.uploader
+      .upload_stream({ folder: 'uucpc/avatars' }, async (error, result) => {
+        if (error) {
+          return res.status(500).json({ ok: false, message: 'Failed to update profile picture' });
+        }
+        await db
+          .collection('users')
+          .updateOne(
+            { _id: new ObjectId(req.user?._id) },
+            { $set: { avatar: result?.secure_url } },
+          );
+        return res.status(200).json({ ok: true, message: 'Profile picture updated successfully' });
+      })
+      .end(req.file.buffer);
+
+    return null;
   } catch (error) {
     return next(error);
   }
