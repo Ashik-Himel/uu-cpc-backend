@@ -84,6 +84,7 @@ export const getUser = (req, res, next) => {
       batch: req.user?.batch,
       section: req.user?.section,
       email: req.user?.email,
+      phone: req.user?.phone,
       role: req.user?.role,
       avatar: req.user?.avatar,
       verified: req.user?.verified,
@@ -148,6 +149,56 @@ export const verifyProfile = async (req, res, next) => {
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(400).json({ ok: false, message: 'Link expired or invalid' });
     }
+    return next(error);
+  }
+};
+
+export const updateProfileIfo = async (req, res, next) => {
+  try {
+    const db = getDB();
+    const { name, email, phone, studentId, batch, section } = req.body;
+
+    if (req.user?.email !== email) {
+      return res.status(401).json({ ok: false, message: 'Unauthorized access' });
+    }
+
+    const updatedUser = {
+      $set: {
+        name,
+        phone,
+        studentId,
+        batch,
+        section,
+      },
+    };
+    await db.collection('users').updateOne({ _id: new ObjectId(req.user?._id) }, updatedUser);
+
+    return res.status(200).json({ ok: true, message: 'Profile updated successfully' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updatePassword = async (req, res, next) => {
+  try {
+    const db = getDB();
+    const { password, newPassword, reTypedPassword } = req.body;
+
+    const isMatch = await bcrypt.compare(password, req.user?.password);
+    if (!isMatch) {
+      return res.status(401).json({ ok: false, message: 'Current password is invalid' });
+    }
+    if (newPassword !== reTypedPassword) {
+      return res.status(400).json({ ok: false, message: 'New passwords do not match' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db
+      .collection('users')
+      .updateOne({ _id: new ObjectId(req.user?._id) }, { $set: { password: hashedPassword } });
+
+    return res.status(200).json({ ok: true, message: 'Password updated successfully' });
+  } catch (error) {
     return next(error);
   }
 };
