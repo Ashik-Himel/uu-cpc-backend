@@ -7,6 +7,7 @@ import errorHandler from './middlewares/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 // import contestRoutes from './routes/contestRoutes.js';
 // import announcementRoutes from './routes/announcementRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 // app.use('/api/contests', contestRoutes);
 // app.use('/api/announcements', announcementRoutes);
+app.use('/api/feedbacks', feedbackRoutes);
 
 app.use(errorHandler);
 

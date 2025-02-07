@@ -9,7 +9,7 @@ import {
   resetPassword,
   updateAvatar,
   updatePassword,
-  updateProfileIfo,
+  updateProfileInfo,
   verifyProfile,
   verifyProfileRequest,
 } from '../controllers/authController.js';
@@ -25,7 +25,7 @@ router.post('/login', login);
 router.get('/user', authorizeUser, getUser);
 router.get('/verify-profile', authorizeUser, verifyProfileRequest);
 router.put('/verify-profile', verifyProfile);
-router.put('/update-profile', authorizeUser, updateProfileIfo);
+router.put('/update-profile', authorizeUser, updateProfileInfo);
 router.put('/update-password', authorizeUser, updatePassword);
 router.put('/update-avatar', authorizeUser, upload.single('avatar'), updateAvatar);
 router.post('/forgot-password', forgotPassword);

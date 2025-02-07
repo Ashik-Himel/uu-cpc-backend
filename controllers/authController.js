@@ -37,8 +37,10 @@ export const register = async (req, res, next) => {
       section,
       email,
       password: await bcrypt.hash(password, 10),
+      avatar: '',
       role: 'member',
       verified: false,
+      createdAt: new Date(),
     };
 
     const result = await db.collection('users').insertOne(newUser);
@@ -166,7 +168,7 @@ export const verifyProfile = async (req, res, next) => {
   }
 };
 
-export const updateProfileIfo = async (req, res, next) => {
+export const updateProfileInfo = async (req, res, next) => {
   try {
     const db = getDB();
     const { name, email, phone, studentId, batch, section } = req.body;
