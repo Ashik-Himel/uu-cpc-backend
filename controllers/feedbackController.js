@@ -1,10 +1,30 @@
+/* eslint-disable object-curly-newline */
 import { getDB } from '../configs/db.js';
 
 export const getFeedbacks = async (req, res, next) => {
   try {
     const db = getDB();
-    const feedbacks = await db.collection('feedbacks').find({ userId: req.user._id }).toArray();
-    return res.status(200).json({ ok: true, feedbacks });
+    const skip = parseInt(req.query.skip, 10) || 0;
+    const limit = parseInt(req.query.limit, 10) || 4;
+
+    const feedbacks = await db
+      .collection('feedbacks')
+      .find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const totalFeedbacks = await db
+      .collection('feedbacks')
+      .countDocuments({ userId: req.user._id });
+    const nextPage = skip + limit < totalFeedbacks;
+
+    return res.status(200).json({
+      ok: true,
+      feedbacks,
+      nextPage,
+    });
   } catch (error) {
     return next(error);
   }
